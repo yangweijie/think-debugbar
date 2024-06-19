@@ -1,0 +1,32 @@
+{
+  "name": "yangweijie/debugbar",
+  "type": "library",
+  "description": "",
+  "license": "Apache-2.0",
+  "authors": [
+    {
+      "name": "yangweijie",
+      "email": "917647288@qq.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "require": {
+    "topthink/framework": "^8.0",
+    "maximebf/debugbar": "^1.19"
+  },
+  "extra": {
+    "think": {
+      "services": [
+        "think\\debugbar\\Service"
+      ]
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "think\\debugbar\\": "src/"
+    },
+    "files": [
+      "src/helper.php"
+    ]
+  }
+}
