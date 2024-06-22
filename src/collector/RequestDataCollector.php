@@ -15,7 +15,7 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
 
     public function getName()
     {
-        return '请求';
+        return 'request';
     }
 
     /**
