@@ -13,6 +13,11 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
         $this->request = $request;
     }
 
+    public function getName()
+    {
+        return '请求';
+    }
+
     /**
      * Called by the DebugBar when data needs to be collected
      *

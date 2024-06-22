@@ -51,7 +51,7 @@ class ThinkCollector extends DataCollector implements Renderable
         return [
             "version" => [
                 "icon"    => "github",
-                "tooltip" => "Version",
+                "tooltip" => "ThinkPHP版本",
                 "map"     => "think.version",
                 "default" => "",
             ],

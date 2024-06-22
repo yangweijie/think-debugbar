@@ -9,7 +9,6 @@ use DebugBar\DataCollector\MemoryCollector;
 use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
-use DebugBar\JavascriptRenderer;
 use think\debugbar\collector\FilesCollector;
 use think\debugbar\collector\RequestDataCollector;
 use think\debugbar\collector\SessionCollector;
@@ -24,12 +23,15 @@ class DebugBar extends \DebugBar\DebugBar
 {
     protected $app;
 
+    protected ?string $editorTemplateLink = null;
+    protected array $remoteServerReplacements = [];
+
     public function __construct(App $app)
     {
         $this->app = $app;
     }
 
-    public function getJavascriptRenderer($baseUrl = '/debugbar', $basePath = null)
+    public function getJavascriptRenderer($baseUrl = null, $basePath = null)
     {
         if ($this->jsRenderer === null) {
             $this->jsRenderer = new JavascriptRenderer($this, $baseUrl, $basePath);
@@ -114,6 +116,10 @@ class DebugBar extends \DebugBar\DebugBar
 
     public function init()
     {
+
+        $this->editorTemplateLink = $this->app->config->get('debugbar.editor') ?: null;
+        $this->remoteServerReplacements = $this->getRemoteServerReplacements();
+
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
         $this->addCollector(new MessagesCollector());
@@ -138,7 +144,7 @@ class DebugBar extends \DebugBar\DebugBar
         $this->addCollector(new MemoryCollector());
 
         //配置
-        $configCollector = new ConfigCollector();
+        $configCollector = new ConfigCollector([], '配置');
         $configCollector->setData($this->app->config->get());
         $this->addCollector($configCollector);
 
@@ -184,5 +190,30 @@ class DebugBar extends \DebugBar\DebugBar
             $content = $content . $renderedContent;
         }
         $response->content($content);
+    }
+
+    private function getRemoteServerReplacements()
+    {
+        $localPath = $this->app['config']->get('debugbar.local_sites_path') ?: base_path();
+        $remotePaths = array_filter(explode(',', $this->app['config']->get('debugbar.remote_sites_path') ?: '')) ?: [base_path()];
+
+        return array_fill_keys($remotePaths, $localPath);
+    }
+
+    /**
+     * Magic calls for adding messages
+     *
+     * @param string $method
+     * @param array $args
+     * @return mixed|void
+     */
+    public function __call($method, $args)
+    {
+        $messageLevels = ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'log'];
+        if (in_array($method, $messageLevels)) {
+            foreach ($args as $arg) {
+                $this->addMessage($arg, $method);
+            }
+        }
     }
 }

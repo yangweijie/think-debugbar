@@ -11,7 +11,7 @@
   ],
   "minimum-stability": "dev",
   "require": {
-    "topthink/framework": "^8.0",
+    "topthink/framework": "^6.0 | ^6.1 | ^8.0",
     "maximebf/debugbar": "^1.19"
   },
   "extra": {

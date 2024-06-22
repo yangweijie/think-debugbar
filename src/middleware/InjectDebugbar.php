@@ -21,7 +21,7 @@ class InjectDebugbar
 
     public function handle(Request $request, $next)
     {
-        if (Str::startsWith($request->pathinfo(), "debugbar/")) {
+        if (Str::startsWith($request->pathinfo(), "_debugbar/")) {
             return $next($request);
         }
 

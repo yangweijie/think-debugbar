@@ -13,7 +13,7 @@ class FilesCollector extends DataCollector implements Renderable
 
     protected $ignored = [
         'vendor/maximebf/debugbar',
-        'vendor/yangweijie/think-debugbar',
+        'debugbar',
     ];
 
     public function __construct(App $app)
@@ -94,6 +94,6 @@ class FilesCollector extends DataCollector implements Renderable
      */
     public function getName()
     {
-        return 'files';
+        return '文件';
     }
 }
