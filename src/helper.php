@@ -14,19 +14,19 @@ if (!function_exists('debugbar')) {
     }
 }
 
-if (!function_exists('trace')) {
-    /**
-     * 记录日志信息
-     * @param mixed  $log   log信息 支持字符串和数组
-     * @param string $level 日志级别
-     * @return array|void
-     */
-    function trace($log, string $level = 'debug')
-    {
-        debugbar()->addMessage($log, $level);
-        Log::record($log, $level);
-    }
-}
+//if (!function_exists('trace')) {
+//    /**
+//     * 记录日志信息
+//     * @param mixed  $log   log信息 支持字符串和数组
+//     * @param string $level 日志级别
+//     * @return array|void
+//     */
+//    function trace($log, string $level = 'debug')
+//    {
+//        debugbar()->addMessage($log, $level);
+//        Log::record($log, $level);
+//    }
+//}
 
 if (!function_exists('start_measure')) {
     /**

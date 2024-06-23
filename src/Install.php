@@ -24,4 +24,11 @@ class Install
 		}
 	}
 
+    public static function patch(){
+        $patch_file = __DIR__.'/../../../topthink/think-orm/src/db/PDOConnection.php';
+        if(file_exists($patch_file)){
+            file_put_contents($patch_file, str_replace('protected $queryStartTime;', 'public $queryStartTime;', file_get_contents($patch_file)));
+        }
+    }
+
 }

@@ -145,7 +145,6 @@ class SqlCollector extends PDOCollector
         if ($this->hardLimit && $this->queryCount > $this->hardLimit) {
             return;
         }
-        dump($query->getConnection());
         $limited = $this->softLimit && $this->queryCount > $this->softLimit;
         $sql = (string) $query->getConnection()->getLastSql();
         $explainResults = [];
@@ -223,7 +222,7 @@ class SqlCollector extends PDOCollector
         ];
 
         if ($this->timeCollector !== null) {
-            $this->timeCollector->addMeasure(Str::limit($sql, 100), $startTime, $endTime, [], 'db');
+            $this->timeCollector->addMeasure(Str::limit($sql, 100), $query->getConnection()->queryStartTime, $endTime, [], 'db');
         }
     }
 

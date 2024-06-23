@@ -164,14 +164,16 @@ class DebugBar extends \DebugBar\DebugBar
         $logger = new MessagesCollector('log');
         $this['messages']->aggregate($logger);
 
-        $this->app->log->listen(function (LogWrite $event) use ($logger) {
+        $this->app->log->listen(function (LogWrite $event) use ($logger, $events) {
+            $database_tab = ($this->shouldCollect('db', true) && isset($this->app->db) && $events);
             foreach ($event->log as $channel => $logs) {
                 foreach ($logs as $log) {
-                    $logger->addMessage(
-                        '[' . date('H:i:s') . '] ' . $log,
-                        $channel,
-                        false
-                    );
+                    if($database_tab && $channel != 'sql')
+                        $logger->addMessage(
+                            '[' . date('H:i:s') . '] ' . $log,
+                            $channel,
+                            false
+                        );
                 }
             }
         });
