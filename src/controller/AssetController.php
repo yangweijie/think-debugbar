@@ -29,7 +29,7 @@ class AssetController
     public function js()
     {
         $renderer = $this->debugbar->getJavascriptRenderer();
-
+//        $renderer->addControl();
         $content = $renderer->dumpAssetsToString('js');
 
         return response($content)->contentType('application/javascript')->allowCache(true)

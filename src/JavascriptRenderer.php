@@ -17,6 +17,9 @@ class JavascriptRenderer extends BaseJavascriptRenderer
 
         $this->cssFiles['thinkphp'] = __DIR__ . '/Resources/thinkphp-debugbar.css';
         $this->jsFiles['thinkphp-cache'] = __DIR__ . '/Resources/cache/widget.js';
+//        dump(root_path().'vendor/maximebf/debugbar/src/DebugBar/Resources/widgets/sqlqueries/widget.js');
+        $this->cssFiles['sql'] = root_path() . 'vendor/maximebf/debugbar/src/DebugBar/Resources/widgets/sqlqueries/widget.css';
+        $this->jsFiles['sql'] = root_path() . 'vendor/maximebf/debugbar/src/DebugBar/Resources/widgets/sqlqueries/widget.js';
 
         $theme = config('debugbar.theme', 'auto');
         switch ($theme) {

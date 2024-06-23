@@ -16,6 +16,9 @@
   },
   "extra": {
     "think": {
+      "config": {
+        "debugbar": "config/debugbar.php"
+      },
       "services": [
         "think\\debugbar\\Service"
       ]
@@ -27,6 +30,11 @@
     },
     "files": [
       "src/helper.php"
+    ]
+  },
+  "scripts":{
+    "post-autoload-dump": [
+      "think\\debugbar\\Install::config"
     ]
   }
 }
