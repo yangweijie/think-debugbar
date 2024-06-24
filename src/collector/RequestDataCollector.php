@@ -15,7 +15,7 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
 
     public function getName()
     {
-        return 'request';
+        return '请求';
     }
 
     /**
@@ -45,6 +45,25 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
         }
 
         return $data;
+    }
+
+    /**
+     * @return array
+     */
+    public function getWidgets()
+    {
+        $name = $this->getName();
+        $widget = $this->isHtmlVarDumperUsed()
+            ? "PhpDebugBar.Widgets.HtmlVariableListWidget"
+            : "PhpDebugBar.Widgets.VariableListWidget";
+        return array(
+            $name => array(
+                "icon" => "tags",
+                "widget" => $widget,
+                "map" => $name,
+                "default" => "{}"
+            )
+        );
     }
 
 }

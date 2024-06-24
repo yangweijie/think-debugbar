@@ -661,7 +661,7 @@ class SqlCollector extends PDOCollector
      */
     public function getName()
     {
-        return 'queries';
+        return 'SQL';
     }
 
     /**
@@ -670,14 +670,14 @@ class SqlCollector extends PDOCollector
     public function getWidgets()
     {
         return [
-            "queries" => [
+            "SQL" => [
                 "icon" => "database",
                 "widget" => "PhpDebugBar.Widgets.SQLQueriesWidget",
-                "map" => "queries",
+                "map" => "SQL",
                 "default" => "[]"
             ],
-            "queries:badge" => [
-                "map" => "queries.nb_statements",
+            "SQL:badge" => [
+                "map" => "SQL.nb_statements",
                 "default" => 0
             ]
         ];

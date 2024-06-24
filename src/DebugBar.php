@@ -170,7 +170,7 @@ class DebugBar extends \DebugBar\DebugBar
 
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
-        $this->addCollector(new MessagesCollector());
+        $this->addCollector(new MessagesCollector('调试'));
         $this->addCollector(new RequestDataCollector($this->app->request));
 
         if ($this->shouldCollect('time', true)) {
@@ -207,13 +207,13 @@ class DebugBar extends \DebugBar\DebugBar
         }
 
         $logger = new MessagesCollector('log');
-        $this['messages']->aggregate($logger);
+        $this['调试']->aggregate($logger);
 
         $this->app->log->listen(function (LogWrite $event) use ($logger, $events) {
             $database_tab = ($this->shouldCollect('db', true) && isset($this->app->db) && $events);
             foreach ($event->log as $channel => $logs) {
                 foreach ($logs as $log) {
-                    if($database_tab && $channel != 'sql')
+                    if($database_tab && ($channel != 'sql' && $this->shouldCollect('db', true))){}
                         $logger->addMessage(
                             '[' . date('H:i:s') . '] ' . $log,
                             $channel,
@@ -271,11 +271,11 @@ class DebugBar extends \DebugBar\DebugBar
                             return; // Issue 776 : We've turned off collecting after the listener was attached
                         }
 
-                        $this['queries']->addQuery($query);
+                        $this['SQL']->addQuery($query);
                         //allow collecting only queries slower than a specified amount of milliseconds
                         $threshold = app('config')->get('debugbar.options.db.slow_threshold', false);
                         if (!$threshold || $query->time > $threshold) {
-                            $this['queries']->addQuery($query);
+                            $this['SQL']->addQuery($query);
                         }
                     }
                 );

@@ -33,7 +33,7 @@ class SessionCollector extends DataCollector implements DataCollectorInterface, 
      */
     public function getName()
     {
-        return 'session';
+        return '会话';
     }
 
     /**
@@ -42,10 +42,10 @@ class SessionCollector extends DataCollector implements DataCollectorInterface, 
     public function getWidgets()
     {
         return [
-            "session" => [
+            "会话" => [
                 "icon"    => "archive",
                 "widget"  => "PhpDebugBar.Widgets.VariableListWidget",
-                "map"     => "session",
+                "map"     => "会话",
                 "default" => "{}",
             ],
         ];
