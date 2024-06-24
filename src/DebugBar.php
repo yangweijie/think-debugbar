@@ -12,6 +12,7 @@ use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\ObjectCountCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
+use DebugBar\Storage\FileStorage;
 use DebugBar\Storage\PdoStorage;
 use DebugBar\Storage\RedisStorage;
 use think\db\Query;
@@ -22,6 +23,7 @@ use think\debugbar\collector\ThinkCollector;
 use think\debugbar\collector\SqlCollector;
 use think\debugbar\formatter\QueryFormatter;
 use think\event\LogWrite;
+use think\Exception;
 use think\facade\Db;
 use think\Response;
 use think\response\Redirect;
@@ -149,7 +151,6 @@ class DebugBar extends \DebugBar\DebugBar
 
     public function init()
     {
-
         if ($this->booted) {
             return;
         }
@@ -164,6 +165,8 @@ class DebugBar extends \DebugBar\DebugBar
         if ($config->get('debugbar.error_handler', false)) {
             set_error_handler([$this, 'handleError']);
         }
+
+        $this->selectStorage($this);
 
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
@@ -290,6 +293,7 @@ class DebugBar extends \DebugBar\DebugBar
 
         //文件
         $this->addCollector(new FilesCollector($this->app));
+        
         $this->booted = true;
     }
 
@@ -326,7 +330,6 @@ class DebugBar extends \DebugBar\DebugBar
      */
     protected function selectStorage(DebugBar $debugbar)
     {
-        /** @var \Illuminate\Config\Repository $config */
         $config = $this->app['config'];
         if ($config->get('debugbar.storage.enabled')) {
             $driver = $config->get('debugbar.storage.driver', 'file');
@@ -340,10 +343,7 @@ class DebugBar extends \DebugBar\DebugBar
                     break;
                 case 'redis':
                     $connection = $config->get('debugbar.storage.connection');
-                    $client = $this->app['redis']->connection($connection);
-                    if (is_a($client, 'Illuminate\Redis\Connections\Connection', false)) {
-                        $client = $client->client();
-                    }
+                    $client = $this->app->cache->store('redis')->handler();
                     $storage = new RedisStorage($client);
                     break;
                 case 'custom':
@@ -358,7 +358,7 @@ class DebugBar extends \DebugBar\DebugBar
                 case 'file':
                 default:
                     $path = $config->get('debugbar.storage.path');
-                    $storage = new FilesystemStorage($this->app['files'], $path);
+                    $storage = new FileStorage($path);
                     break;
             }
 
@@ -371,6 +371,7 @@ class DebugBar extends \DebugBar\DebugBar
         if ($response instanceof Redirect) {
             return;
         }
+        $config = $this->app['config'];
 
         if ($this->app->exists(Session::class)) {
             $this->addCollector(new  SessionCollector($this->app->make(Session::class)));
@@ -380,19 +381,33 @@ class DebugBar extends \DebugBar\DebugBar
 
         //把缓冲区的日志写入
         $this->app->log->save();
+        try {
+            $renderer = $this->getJavascriptRenderer();
 
-        $renderer = $this->getJavascriptRenderer();
+            $autoShow = $config->get('debugbar.ajax_handler_auto_show', true);
+            $renderer->setAjaxHandlerAutoShow($autoShow);
 
-        $renderedContent = $renderer->renderHead() . $renderer->render();
+            $enableTab = $config->get('debugbar.ajax_handler_enable_tab', true);
+            $renderer->setAjaxHandlerEnableTab($enableTab);
 
-        // trace调试信息注入
-        $pos = strripos($content, '</body>');
-        if (false !== $pos) {
-            $content = substr($content, 0, $pos) . $renderedContent . substr($content, $pos);
-        } else {
-            $content = $content . $renderedContent;
+            if ($this->getStorage()) {
+                $openHandlerUrl = '/_debugbar/handle';
+                $renderer->setOpenHandlerUrl($openHandlerUrl);
+            }
+
+            $renderedContent = $renderer->renderHead() . $renderer->render();
+
+            // trace调试信息注入
+            $pos = strripos($content, '</body>');
+            if (false !== $pos) {
+                $content = substr($content, 0, $pos) . $renderedContent . substr($content, $pos);
+            } else {
+                $content = $content . $renderedContent;
+            }
+            $response->content($content);
+        }catch (Exception $e){
+
         }
-        $response->content($content);
     }
 
     private function getRemoteServerReplacements()

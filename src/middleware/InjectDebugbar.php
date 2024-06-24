@@ -31,6 +31,8 @@ class InjectDebugbar
         if(!$request->isAjax() && !$request->isOptions() && !$request->isCli()){
             $this->debugbar->inject($response);
         }
+        $this->debugbar->stackData();
+        $this->debugbar->sendDataInHeaders(true);
 
         return $response;
     }

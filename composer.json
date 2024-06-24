@@ -13,7 +13,6 @@
   "require": {
     "topthink/framework": "^6.0 | ^6.1 | ^8.0",
     "maximebf/debugbar": "^1.19",
-    "illuminate/filesystem" :"*",
     "vlucas/phpdotenv": "*"
   },
   "extra": {
