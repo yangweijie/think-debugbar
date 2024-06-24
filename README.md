@@ -68,8 +68,57 @@ class MyDataCollector extends DebugBar\DataCollector\DataCollector implements De
                 "tooltip" => "uniqid()",
                 "map" => "uniqid",
                 "default" => "''"
-            )
+            ),
+            "mycollector:badge" => [
+                "map" => "SQL.nb_statements",
+                "default" => 0
+            ]
         );
     }
 }
 ~~~
+badge 角标，可以从collect 取map的key
+
+#### 让message里可以打开指定文件
+如文件加载列表
+
+~~~
+    /**
+     * {@inheritDoc}
+     */
+    public function collect()
+    {
+        $files = $this->getIncludedFiles();
+
+        $included = [];
+        if(!$this->getXdebugLinkTemplate()){
+            $this->setEditorLinkTemplate(app()->config->get('debugbar.editor'));
+        }
+        foreach ($files as $file) {
+
+            if (Str::contains($file, $this->ignored)) {
+                continue;
+            }
+
+            $included[] = [
+                'message'   => "'" . $this->stripBasePath($file) . "',",
+                // Use PHP syntax so we can copy-paste to compile config file.
+                'is_string' => true,
+                'xdebug_link'=>$this->getXdebugLink($file),
+            ];
+        }
+
+        return [
+            'messages' => $included,
+            'count'    => count($included),
+        ];
+    }
+~~~
+message 里  包含 xdebug_link $this->getXdebugLink($file)
+
+
+### 资源
+扩展 JavascriptRenderer 类，
+实现 renderHead 方法替换静态资源头部
+然后 注册路由控制器来实现 资源地址动态返回js文件
+
