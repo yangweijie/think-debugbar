@@ -2,8 +2,6 @@
 
 namespace think\debugbar;
 
-use think\debugbar\storage\FilesystemStorage;
-use think\debugbar\storage\SocketStorage;
 use Closure;
 use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\DataCollectorInterface;
@@ -12,9 +10,11 @@ use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\ObjectCountCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
-use DebugBar\Storage\FileStorage;
 use DebugBar\Storage\PdoStorage;
 use DebugBar\Storage\RedisStorage;
+use think\debugbar\storage\FilesystemStorage;
+use think\debugbar\storage\SocketStorage;
+use think\debugbar\storage\FileStorage;
 use think\db\Query;
 use think\debugbar\collector\FilesCollector;
 use think\debugbar\collector\RequestDataCollector;
@@ -223,7 +223,7 @@ class DebugBar extends \DebugBar\DebugBar
             }
         });
 
-        if ($this->shouldCollect('db', true) && isset($this->app->db) && $events) {
+        if ($this->shouldCollect('db', true) && $events) {
             if ($this->hasCollector('time') && $config->get('debugbar.options.db.timeline', false)) {
                 $timeCollector = $this['time'];
             } else {
@@ -267,28 +267,22 @@ class DebugBar extends \DebugBar\DebugBar
                 $events->listen(
                     'db.*',
                     function ($query){
-//                        dump($query->getConnection());
                         if (!app(static::class)->shouldCollect('db', true)) {
                             return; // Issue 776 : We've turned off collecting after the listener was attached
                         }
 
                         $this['queries']->addQuery($query);
                         //allow collecting only queries slower than a specified amount of milliseconds
-//                        $threshold = app('config')->get('debugbar.options.db.slow_threshold', false);
-//                        if (!$threshold || $query->time > $threshold) {
-//                            $this['queries']->addQuery($query);
-//                        }
+                        $threshold = app('config')->get('debugbar.options.db.slow_threshold', false);
+                        if (!$threshold || $query->time > $threshold) {
+                            $this['queries']->addQuery($query);
+                        }
                     }
                 );
             } catch (Exception $e) {
                 $this->addCollectorException('Cannot listen to Queries', $e);
             }
 
-//            try {
-//
-//            } catch (Exception $e) {
-//                $this->addCollectorException('Cannot listen transactions to Queries', $e);
-//            }
         }
 
         //文件
@@ -381,7 +375,7 @@ class DebugBar extends \DebugBar\DebugBar
 
         //把缓冲区的日志写入
         $this->app->log->save();
-        try {
+        
             $renderer = $this->getJavascriptRenderer();
 
             $autoShow = $config->get('debugbar.ajax_handler_auto_show', true);
@@ -395,8 +389,12 @@ class DebugBar extends \DebugBar\DebugBar
                 $renderer->setOpenHandlerUrl($openHandlerUrl);
             }
 
-            $renderedContent = $renderer->renderHead() . $renderer->render();
-
+            try {
+                $renderedContent = $renderer->renderHead() . $renderer->render();
+            }catch (Exception $e){
+                $this->addCollectorException('清空文件缓存导致，请手动刷新', $e);
+                $renderedContent = $renderer->renderHead() . $renderer->render();
+            }
             // trace调试信息注入
             $pos = strripos($content, '</body>');
             if (false !== $pos) {
@@ -405,9 +403,7 @@ class DebugBar extends \DebugBar\DebugBar
                 $content = $content . $renderedContent;
             }
             $response->content($content);
-        }catch (Exception $e){
-
-        }
+       
     }
 
     private function getRemoteServerReplacements()

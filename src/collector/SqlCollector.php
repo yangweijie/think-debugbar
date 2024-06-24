@@ -152,7 +152,7 @@ class SqlCollector extends PDOCollector
         $time = $query->getConnection()->queryStartTime;
 //        $time = Reflection::classProperties($query->getConnection(), 'queryStartTime')?:0;
         $endTime = microtime(true);
-        $startTime = $endTime - $time;
+        $startTime = ($endTime - $time);
         $hints = $this->performQueryAnalysis($sql);
 
         $pdo = null;

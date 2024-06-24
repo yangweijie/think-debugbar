@@ -29,6 +29,9 @@ class FilesCollector extends DataCollector implements Renderable
         $files = $this->getIncludedFiles();
 
         $included = [];
+        if(!$this->getXdebugLinkTemplate()){
+            $this->setEditorLinkTemplate(app()->config->get('debugbar.editor'));
+        }
         foreach ($files as $file) {
 
             if (Str::contains($file, $this->ignored)) {
@@ -39,6 +42,7 @@ class FilesCollector extends DataCollector implements Renderable
                 'message'   => "'" . $this->stripBasePath($file) . "',",
                 // Use PHP syntax so we can copy-paste to compile config file.
                 'is_string' => true,
+                'xdebug_link'=>$this->getXdebugLink($file),
             ];
         }
 
