@@ -14,6 +14,19 @@ if (!function_exists('debugbar')) {
     }
 }
 
+if (! function_exists('storage_path')) {
+    /**
+     * Get the path to the storage folder.
+     *
+     * @param  string  $path
+     * @return string
+     */
+    function storage_path($path = '')
+    {
+        return app()->getRuntimePath().'storage/'.$path;
+    }
+}
+
 //if (!function_exists('trace')) {
 //    /**
 //     * 记录日志信息

@@ -2,6 +2,8 @@
 
 namespace think\debugbar;
 
+use think\debugbar\storage\FilesystemStorage;
+use think\debugbar\storage\SocketStorage;
 use Closure;
 use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\DataCollectorInterface;
@@ -10,6 +12,8 @@ use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\ObjectCountCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
+use DebugBar\Storage\PdoStorage;
+use DebugBar\Storage\RedisStorage;
 use think\db\Query;
 use think\debugbar\collector\FilesCollector;
 use think\debugbar\collector\RequestDataCollector;
@@ -26,7 +30,21 @@ use think\App;
 
 class DebugBar extends \DebugBar\DebugBar
 {
-    protected $app;
+    public $app;
+    /**
+     * True when booted.
+     *
+     * @var bool
+     */
+    protected $booted = false;
+
+    /**
+     * True when enabled, false disabled on null for still unknown
+     *
+     * @var bool
+     */
+    protected $enabled = null;
+
 
     protected ?string $editorTemplateLink = null;
     protected array $remoteServerReplacements = [];
@@ -131,21 +149,45 @@ class DebugBar extends \DebugBar\DebugBar
 
     public function init()
     {
+
+        if ($this->booted) {
+            return;
+        }
+
         $events = $this->app->event;
         $this->editorTemplateLink = $this->app->config->get('debugbar.editor') ?: null;
         $this->remoteServerReplacements = $this->getRemoteServerReplacements();
+
+        $config = $this->app->config;
+
+        // Set custom error handler
+        if ($config->get('debugbar.error_handler', false)) {
+            set_error_handler([$this, 'handleError']);
+        }
 
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
         $this->addCollector(new MessagesCollector());
         $this->addCollector(new RequestDataCollector($this->app->request));
-        $this->addCollector(new TimeDataCollector($this->app->request->time()));
+
+        if ($this->shouldCollect('time', true)) {
+            $startTime = $this->app->request->time();
+            $this->addCollector(new TimeDataCollector($startTime));
+
+            if ($config->get('debugbar.options.time.memory_usage')) {
+                $this['time']->showMemoryUsage();
+            }
+
+            $this->startMeasure('application', 'Application', 'time');
+        }
+
         $this->addCollector(new MemoryCollector());
 
         //配置
         $configCollector = new ConfigCollector([], '配置');
         $configCollector->setData($this->app->config->get());
         $this->addCollector($configCollector);
+
         if ($this->shouldCollect('models', true) && $events) {
             try {
                 $this->addCollector(new ObjectCountCollector('模型'));
@@ -178,17 +220,7 @@ class DebugBar extends \DebugBar\DebugBar
             }
         });
 
-        $config = $this->app->config;
         if ($this->shouldCollect('db', true) && isset($this->app->db) && $events) {
-//            $events->listen('db.*', function($query){
-//                $pdo = new \DebugBar\DataCollector\PDO\TraceablePDO($query->getConnection()->getPdo());
-//                if(!isset($this['pdo'])){
-//                    $this->addCollector(new \DebugBar\DataCollector\PDO\PDOCollector($pdo));
-//                }
-//                $this['pdo']->collect();
-////                $this['pdo']->collect();
-//            });
-            
             if ($this->hasCollector('time') && $config->get('debugbar.options.db.timeline', false)) {
                 $timeCollector = $this['time'];
             } else {
@@ -258,6 +290,19 @@ class DebugBar extends \DebugBar\DebugBar
 
         //文件
         $this->addCollector(new FilesCollector($this->app));
+        $this->booted = true;
+    }
+
+    /**
+     * Enable the Debugbar and boot, if not already booted.
+     */
+    public function enable()
+    {
+        $this->enabled = true;
+
+        if (!$this->booted) {
+            $this->init();
+        }
     }
 
     public function shouldCollect($name, $default = false)
@@ -274,6 +319,51 @@ class DebugBar extends \DebugBar\DebugBar
         }
 
         return $this;
+    }
+
+    /**
+     * @param \DebugBar\DebugBar $debugbar
+     */
+    protected function selectStorage(DebugBar $debugbar)
+    {
+        /** @var \Illuminate\Config\Repository $config */
+        $config = $this->app['config'];
+        if ($config->get('debugbar.storage.enabled')) {
+            $driver = $config->get('debugbar.storage.driver', 'file');
+
+            switch ($driver) {
+                case 'pdo':
+                    $connection = $config->get('debugbar.storage.connection');
+                    $table = $this->app['db']->getTablePrefix() . 'phpdebugbar';
+                    $pdo = $this->app['db']->connection($connection)->getPdo();
+                    $storage = new PdoStorage($pdo, $table);
+                    break;
+                case 'redis':
+                    $connection = $config->get('debugbar.storage.connection');
+                    $client = $this->app['redis']->connection($connection);
+                    if (is_a($client, 'Illuminate\Redis\Connections\Connection', false)) {
+                        $client = $client->client();
+                    }
+                    $storage = new RedisStorage($client);
+                    break;
+                case 'custom':
+                    $class = $config->get('debugbar.storage.provider');
+                    $storage = $this->app->make($class);
+                    break;
+                case 'socket':
+                    $hostname = $config->get('debugbar.storage.hostname', '127.0.0.1');
+                    $port = $config->get('debugbar.storage.port', 2304);
+                    $storage = new SocketStorage($hostname, $port);
+                    break;
+                case 'file':
+                default:
+                    $path = $config->get('debugbar.storage.path');
+                    $storage = new FilesystemStorage($this->app['files'], $path);
+                    break;
+            }
+
+            $debugbar->setStorage($storage);
+        }
     }
 
     public function inject(Response $response)
@@ -311,6 +401,30 @@ class DebugBar extends \DebugBar\DebugBar
         $remotePaths = array_filter(explode(',', $this->app['config']->get('debugbar.remote_sites_path') ?: '')) ?: [base_path()];
 
         return array_fill_keys($remotePaths, $localPath);
+    }
+
+    /**
+     * Handle silenced errors
+     *
+     * @param $level
+     * @param $message
+     * @param string $file
+     * @param int $line
+     * @param array $context
+     * @throws \ErrorException
+     */
+    public function handleError($level, $message, $file = '', $line = 0, $context = [])
+    {
+        $exception = new \ErrorException($message, 0, $level, $file, $line);
+        if (error_reporting() & $level) {
+            throw $exception;
+        }
+
+        $this->addThrowable($exception);
+        if ($this->hasCollector('messages')) {
+            $file = $file ? ' on ' . $this['messages']->normalizeFilePath($file) . ":{$line}" : '';
+            $this['messages']->addMessage($message . $file, 'deprecation');
+        }
     }
 
     /**
