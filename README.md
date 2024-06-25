@@ -5,7 +5,7 @@
 ## 安装
 
 ~~~
-composer require topthink/think-debugbar
+composer require yangweijie/think-debugbar
 ~~~
 
 nginx 项目的rewrite里要配ThinkPHP的
@@ -121,4 +121,23 @@ message 里  包含 xdebug_link $this->getXdebugLink($file)
 扩展 JavascriptRenderer 类，
 实现 renderHead 方法替换静态资源头部
 然后 注册路由控制器来实现 资源地址动态返回js文件
+
+
+## 升级功能
+
+### SQL tab
+将sql 日志 独立出来 显示在SQL tab 里 有timeline、 可以点击跳转编辑器、可以一件复制
+![](screen\SQL.png)
+### Ajax 监听 
+支持xhr 请求监听， 可以切换历史请求看调试信息
+![](screen\ajax.png)
+### 添加模型显示
+显示请求中使用的模型 可以打开跳转
+
+### 加载文件可以打开跳转源文件
+
+### tab 中文化
+
+### logo显示官方logo
+
 
