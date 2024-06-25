@@ -225,6 +225,48 @@ class SqlCollector extends PDOCollector
             $this->timeCollector->addMeasure(Str::limit($sql, 100), $query->getConnection()->queryStartTime, $endTime, [], 'db');
         }
     }
+    
+    function addSql($sql, $time, $master, $pdo, $database, $driver){
+        if(strip_tags($sql, 'CONNECT:') !== false){
+            $start = $time;
+            $cost = 0;
+        }else{
+            $start = microtime(true) /1000 - $time;
+            $cost = $time;
+        }
+        $source = [];
+        if (!$limited && $this->findSource) {
+            try {
+                $source = $this->findSource();
+            } catch (\Exception $e) {
+            }
+        }
+
+        // Run EXPLAIN on this query (if needed)
+        if (!$limited && $this->explainQuery && $pdo && preg_match('/^\s*(' . implode('|', $this->explainTypes) . ') /i', $sql)) {
+            $statement = $pdo->prepare('EXPLAIN ' . $sql);
+            $explainResults = $statement->fetchAll(\PDO::FETCH_CLASS);
+        }
+
+        $this->queries[] = [
+            'query' => $sql,
+            'type' => 'query',
+            'bindings' => null,
+            'start' => $start,
+            'time' =>  $cost,
+            'memory' => $this->lastMemoryUsage ? memory_get_usage(false) - $this->lastMemoryUsage : 0,
+            'source' => $source,
+            'explain' => $explainResults,
+            'connection' => $database,
+            'driver' => $driver,
+            'hints' => ($this->showHints && !$limited) ? $hints : null,
+            'show_copy' => $this->showCopyButton,
+        ];
+
+        if ($this->timeCollector !== null) {
+            $this->timeCollector->addMeasure(Str::limit($sql, 100), $query->getConnection()->queryStartTime, $endTime, [], 'db');
+        }
+    }
 
     /**
      * Mimic mysql_real_escape_string

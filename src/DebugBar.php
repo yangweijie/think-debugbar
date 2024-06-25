@@ -16,6 +16,7 @@ use think\debugbar\storage\FilesystemStorage;
 use think\debugbar\storage\SocketStorage;
 use think\debugbar\storage\FileStorage;
 use think\db\Query;
+use DebugBar\DataCollector\ExceptionsCollector;
 use think\debugbar\collector\FilesCollector;
 use think\debugbar\collector\RequestDataCollector;
 use think\debugbar\collector\SessionCollector;
@@ -171,6 +172,9 @@ class DebugBar extends \DebugBar\DebugBar
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
         $this->addCollector(new MessagesCollector('调试'));
+        if ($config->get('debugbar.options.messages.trace', true)) {
+            $this['调试']->collectFileTrace(true);
+        }
         $this->addCollector(new RequestDataCollector($this->app->request));
 
         if ($this->shouldCollect('time', true)) {
@@ -182,6 +186,16 @@ class DebugBar extends \DebugBar\DebugBar
             }
 
             $this->startMeasure('application', 'Application', 'time');
+        }
+
+        if ($this->shouldCollect('exceptions', true)) {
+            try {
+                $this->addCollector(new ExceptionsCollector());
+                $this['exceptions']->setChainExceptions(
+                    $config->get('debugbar.options.exceptions.chain', true)
+                );
+            } catch (Exception $e) {
+            }
         }
 
         $this->addCollector(new MemoryCollector());
@@ -262,7 +276,13 @@ class DebugBar extends \DebugBar\DebugBar
             }
 
             $this->addCollector($queryCollector);
+//            $this['SQL']->addQuery($query);
 
+            Db::listen(function($sql, $runtime, $master) {
+                dd(Db::connect());
+//                dump(func_get_args());
+                $this['SQL']->addSql($sql, $runtime, $master, Db::connect()->getLastInsID(), $this->app->db->getConfig('database'), 'mysql');
+            });
             try {
                 $events->listen(
                     'db.*',
