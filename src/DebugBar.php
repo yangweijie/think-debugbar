@@ -6,7 +6,6 @@ use Closure;
 use DebugBar\DataCollector\ConfigCollector;
 use DebugBar\DataCollector\DataCollectorInterface;
 use DebugBar\DataCollector\MemoryCollector;
-use DebugBar\DataCollector\MessagesCollector;
 use DebugBar\DataCollector\ObjectCountCollector;
 use DebugBar\DataCollector\PhpInfoCollector;
 use DebugBar\DataCollector\TimeDataCollector;
@@ -18,6 +17,7 @@ use think\debugbar\storage\FileStorage;
 use think\db\Query;
 use DebugBar\DataCollector\ExceptionsCollector;
 use think\debugbar\collector\FilesCollector;
+use think\debugbar\collector\MessagesCollector;
 use think\debugbar\collector\RequestDataCollector;
 use think\debugbar\collector\SessionCollector;
 use think\debugbar\collector\ThinkCollector;
@@ -134,9 +134,9 @@ class DebugBar extends \DebugBar\DebugBar
 
     public function addMessage($message, $label = 'info')
     {
-        if ($this->hasCollector('messages')) {
+        if ($this->hasCollector('调试')) {
             /** @var MessagesCollector $collector */
-            $collector = $this->getCollector('messages');
+            $collector = $this->getCollector('调试');
             $collector->addMessage($message, $label);
         }
     }
@@ -172,9 +172,12 @@ class DebugBar extends \DebugBar\DebugBar
 
         $this->addCollector(new ThinkCollector($this->app));
         $this->addCollector(new PhpInfoCollector());
-        $this->addCollector(new MessagesCollector('调试'));
+        $messageCollector = new MessagesCollector('调试');
+        $messageCollector->setEditorLinkTemplate(app()->config->get('debugbar.editor'));
+        $this->addCollector($messageCollector);
         if ($config->get('debugbar.options.messages.trace', true)) {
             $this['调试']->collectFileTrace(true);
+            $this['调试']->setEditorLinkTemplate(app()->config->get('debugbar.editor'));
         }
         $this->addCollector(new RequestDataCollector($this->app->request));
 
@@ -223,22 +226,6 @@ class DebugBar extends \DebugBar\DebugBar
 
         $logger = new MessagesCollector('log');
         $this['调试']->aggregate($logger);
-
-        $this->app->log->listen(function (LogWrite $event) use ($logger, $events) {
-            $database_tab = ($this->shouldCollect('db', true) && isset($this->app->db) && $events);
-            foreach ($event->log as $channel => $logs) {
-                foreach ($logs as $log) {
-//                    if($database_tab
-//                        && ($channel != 'sql' && $this->shouldCollect('db', true))
-//                    ){}
-                        $logger->addMessage(
-                            '[' . date('H:i:s') . '] ' . $log,
-                            $channel,
-                            false
-                        );
-                }
-            }
-        });
 
         if ($this->shouldCollect('db', true) && $events) {
             if ($this->hasCollector('time') && $config->get('debugbar.options.db.timeline', false)) {

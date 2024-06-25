@@ -40,6 +40,7 @@ if (!function_exists('trace')) {
             $log = var_export($log, true);
         }
         Log::record($log, $level);
+        debugbar()->addMessage($log, $level);
     }
 }
 

@@ -24,6 +24,10 @@
       ]
     }
   },
+  "conflict": {
+    "topthink/think-trace": "*",
+    "topthink/think-debugbar": "*"
+  },
   "autoload": {
     "psr-4": {
       "think\\debugbar\\": "src/"
