@@ -127,10 +127,11 @@ message 里  包含 xdebug_link $this->getXdebugLink($file)
 
 ### SQL tab
 将sql 日志 独立出来 显示在SQL tab 里 有timeline、 可以点击跳转编辑器、可以一件复制
-![](screen\SQL.png)
+![](https://cdn.jsdelivr.net/gh/yangweijie/think-debugbar/screen/SQL.png)
+
 ### Ajax 监听 
 支持xhr 请求监听， 可以切换历史请求看调试信息
-![](screen\ajax.png)
+![](https://cdn.jsdelivr.net/gh/yangweijie/think-debugbar/screen/ajax.png)
 ### 添加模型显示
 显示请求中使用的模型 可以打开跳转
 
@@ -140,4 +141,11 @@ message 里  包含 xdebug_link $this->getXdebugLink($file)
 
 ### logo显示官方logo
 
+## 编辑器、ide 打开方式
+
+### sublime
+需要安装 GitHub - [thecotne/subl-protocol: sublime text protocol](https://github.com/thecotne/subl-protocol) 插件
+
+### phpstorm
+参考 [laravel-debugbar 中正确使用 ide phpstorm 打开项目文件的方式 | Laravel China 社区](https://learnku.com/articles/77072) 文章放置 js 和 添加注册表即可
 

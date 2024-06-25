@@ -12,8 +12,7 @@
   "minimum-stability": "dev",
   "require": {
     "topthink/framework": "^6.0 | ^6.1 | ^8.0",
-    "maximebf/debugbar": "^1.19",
-    "vlucas/phpdotenv": "*"
+    "maximebf/debugbar": "^1.19"
   },
   "extra": {
     "think": {
@@ -35,8 +34,7 @@
   },
   "scripts":{
     "post-autoload-dump": [
-      "think\\debugbar\\Install::config",
-      "think\\debugbar\\Install::patch"
+      "think\\debugbar\\Install::config"
     ]
   }
 }
