@@ -6,6 +6,8 @@ use DebugBar\DataCollector\PDO\PDOCollector;
 use DebugBar\DataCollector\TimeDataCollector;
 use think\debugbar\Str;
 use think\debugbar\traits\Reflection;
+use think\facade\Db;
+
 /**
  * Collects data about SQL statements executed with PDO
  */
@@ -226,26 +228,38 @@ class SqlCollector extends PDOCollector
         }
     }
     
-    function addSql($sql, $time, $master, $pdo, $database, $driver){
-        if(strip_tags($sql, 'CONNECT:') !== false){
-            $start = $time;
-            $cost = 0;
+    function addSql($sql, $time, $master, $database, $driver){
+        $this->queryCount++;
+
+        if ($this->hardLimit && $this->queryCount > $this->hardLimit) {
+            return;
+        }
+        $limited = $this->softLimit && $this->queryCount > $this->softLimit;
+        $explainResults = [];
+        $hints = $this->performQueryAnalysis($sql);
+        $endTime = microtime(true);
+        if(stripos($sql, 'CONNECT:') !== false){
+            $start = (float) str_replace(',', '', $time);
+            $cost = $endTime - $start;
         }else{
-            $start = microtime(true) /1000 - $time;
+            $start = $endTime - (float)$time;
             $cost = $time;
         }
+//        dump([
+//            $start, $cost, $endTime,
+//        ]);
         $source = [];
         if (!$limited && $this->findSource) {
             try {
-                $source = $this->findSource();
+                $source = $this->findSource2();
             } catch (\Exception $e) {
             }
         }
 
         // Run EXPLAIN on this query (if needed)
-        if (!$limited && $this->explainQuery && $pdo && preg_match('/^\s*(' . implode('|', $this->explainTypes) . ') /i', $sql)) {
-            $statement = $pdo->prepare('EXPLAIN ' . $sql);
-            $explainResults = $statement->fetchAll(\PDO::FETCH_CLASS);
+        if (!$limited && $this->explainQuery && preg_match('/^\s*(' . implode('|', $this->explainTypes) . ') /i', $sql)) {
+//            $statement = $pdo->prepare('EXPLAIN ' . $sql);
+            $explainResults = Db::query('EXPLAIN ' . $sql);
         }
 
         $this->queries[] = [
@@ -263,8 +277,11 @@ class SqlCollector extends PDOCollector
             'show_copy' => $this->showCopyButton,
         ];
 
+//        dump([
+//            $start, $endTime
+//        ]);
         if ($this->timeCollector !== null) {
-            $this->timeCollector->addMeasure(Str::limit($sql, 100), $query->getConnection()->queryStartTime, $endTime, [], 'db');
+            $this->timeCollector->addMeasure(Str::limit($sql, 100), $start, $endTime, [], 'db');
         }
     }
 
@@ -341,6 +358,25 @@ class SqlCollector extends PDOCollector
         }
 
         return array_slice(array_filter($sources), 0, is_int($this->findSource) ? $this->findSource : 5);
+    }
+
+    protected function findSource2(){
+        $stack = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS | DEBUG_BACKTRACE_PROVIDE_OBJECT, app('config')->get('debugbar.debug_backtrace_limit', 50));
+
+        $sources = [];
+
+        foreach ($stack as $index => $trace) {
+            $sources[] = $this->parseTrace($index, $trace);
+        }
+
+        $stacks = array_slice(array_filter($sources), 0, is_int($this->findSource) ? $this->findSource : 5);
+
+        foreach ($stacks as $k => $v) {
+            if(isset($v->file) && !str_contains($v->file, 'vendor')){
+                return array_slice($stacks, 0, $k+1);
+                break;
+            }
+        }
     }
 
     /**

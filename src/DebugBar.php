@@ -23,6 +23,7 @@ use think\debugbar\collector\SessionCollector;
 use think\debugbar\collector\ThinkCollector;
 use think\debugbar\collector\SqlCollector;
 use think\debugbar\formatter\QueryFormatter;
+use think\debugbar\traits\Reflection;
 use think\event\LogWrite;
 use think\Exception;
 use think\facade\Db;
@@ -227,7 +228,9 @@ class DebugBar extends \DebugBar\DebugBar
             $database_tab = ($this->shouldCollect('db', true) && isset($this->app->db) && $events);
             foreach ($event->log as $channel => $logs) {
                 foreach ($logs as $log) {
-                    if($database_tab && ($channel != 'sql' && $this->shouldCollect('db', true))){}
+//                    if($database_tab
+//                        && ($channel != 'sql' && $this->shouldCollect('db', true))
+//                    ){}
                         $logger->addMessage(
                             '[' . date('H:i:s') . '] ' . $log,
                             $channel,
@@ -276,33 +279,11 @@ class DebugBar extends \DebugBar\DebugBar
             }
 
             $this->addCollector($queryCollector);
-//            $this['SQL']->addQuery($query);
-
-            Db::listen(function($sql, $runtime, $master) {
-                dd(Db::connect());
-//                dump(func_get_args());
-                $this['SQL']->addSql($sql, $runtime, $master, Db::connect()->getLastInsID(), $this->app->db->getConfig('database'), 'mysql');
+            $database = $this->app->db->getConfig('connections.'.$this->app->db->getConfig('default').'.database');
+            $driver = $this->app->db->getConfig('connections.'.$this->app->db->getConfig('default').'.type');
+            Db::listen(function($sql, $runtime, $master) use($database, $driver){
+                $this['SQL']->addSql($sql, $runtime, $master, $database, $driver);
             });
-            try {
-                $events->listen(
-                    'db.*',
-                    function ($query){
-                        if (!app(static::class)->shouldCollect('db', true)) {
-                            return; // Issue 776 : We've turned off collecting after the listener was attached
-                        }
-
-                        $this['SQL']->addQuery($query);
-                        //allow collecting only queries slower than a specified amount of milliseconds
-                        $threshold = app('config')->get('debugbar.options.db.slow_threshold', false);
-                        if (!$threshold || $query->time > $threshold) {
-                            $this['SQL']->addQuery($query);
-                        }
-                    }
-                );
-            } catch (Exception $e) {
-                $this->addCollectorException('Cannot listen to Queries', $e);
-            }
-
         }
 
         //文件
