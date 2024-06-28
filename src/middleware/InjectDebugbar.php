@@ -27,6 +27,8 @@ class InjectDebugbar
 
         $this->debugbar->init();
 
+        $request->debugbar = $this->debugbar;
+
         $response = $next($request);
         if(!$request->isAjax() && !$request->isOptions() && !$request->isCli() && stripos($response->getHeader('Content-Type'), 'json') === false){
             $this->debugbar->inject($response);

@@ -9,6 +9,11 @@ use think\Route;
 
 class Service extends \think\Service
 {
+    public function register()
+    {
+        $this->app->bind('think\exception\Handle', ExceptionHandle::class);
+    }
+
     public function boot(Route $route)
     {
 

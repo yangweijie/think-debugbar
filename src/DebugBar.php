@@ -195,6 +195,7 @@ class DebugBar extends \DebugBar\DebugBar
         if ($this->shouldCollect('exceptions', true)) {
             try {
                 $this->addCollector(new ExceptionsCollector());
+                $this['exceptions']->setEditorLinkTemplate(app()->config->get('debugbar.editor'));
                 $this['exceptions']->setChainExceptions(
                     $config->get('debugbar.options.exceptions.chain', true)
                 );
