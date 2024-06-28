@@ -15,7 +15,10 @@ class OpenHandlerController
     public function __construct(Request $request, DebugBar $debugbar)
     {
         $this->debugbar = $debugbar;
-
+	
+        if(!$this->debugbar->enable()){
+            $this->debugbar->init();
+        }
         if ($request->session) {
             Session::flush();
         }
