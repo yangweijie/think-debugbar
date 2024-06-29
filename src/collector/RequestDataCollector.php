@@ -2,11 +2,13 @@
 
 namespace think\debugbar\collector;
 
+use think\App;
 use think\Request;
 
 class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
 {
     protected $request;
+    protected $response_header = [];
 
     public function __construct(Request $request)
     {
@@ -18,6 +20,10 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
         return '请求';
     }
 
+    public function setResponseHeader($header){
+        $this->response_header = $header;
+    }
+
     /**
      * Called by the DebugBar when data needs to be collected
      *
@@ -26,14 +32,15 @@ class RequestDataCollector extends \DebugBar\DataCollector\RequestDataCollector
     function collect()
     {
         $request = $this->request;
-
         $data = [
             'path_info' => $request->pathinfo(),
             'query'     => $request->get(),
+            'post'      => $request->post(),
             'request'   => $request->request(),
             'headers'   => $request->header(),
             'server'    => $request->server(),
             'cookies'   => $request->cookie(),
+            'response_headers'=> $this->response_header,
         ];
 
         foreach ($data as $key => $var) {
