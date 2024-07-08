@@ -360,40 +360,47 @@ class DebugBar extends \DebugBar\DebugBar
             $this->addCollector(new  SessionCollector($this->app->make(Session::class)));
         }
 
-        $content = $response->getContent();
+        try {
+            $content = $response->getContent();
+        }catch (Exception $e){
+            $exceptionHandle = new ExceptionHandle($this->app);
+            $exceptionHandle->report($e);
+            $content = $exceptionHandle->render($this->app->request, $e)->getContent();
+        }
+
 
         //把缓冲区的日志写入
         $this->app->log->save();
         
-            $renderer = $this->getJavascriptRenderer();
+        $renderer = $this->getJavascriptRenderer();
 
-            $autoShow = $config->get('debugbar.ajax_handler_auto_show', true);
-            $renderer->setAjaxHandlerAutoShow($autoShow);
+        $autoShow = $config->get('debugbar.ajax_handler_auto_show', true);
+        $renderer->setAjaxHandlerAutoShow($autoShow);
 
-            $enableTab = $config->get('debugbar.ajax_handler_enable_tab', true);
-            $renderer->setAjaxHandlerEnableTab($enableTab);
+        $enableTab = $config->get('debugbar.ajax_handler_enable_tab', true);
+        $renderer->setAjaxHandlerEnableTab($enableTab);
 
-            if ($this->getStorage()) {
-                $openHandlerUrl = '/_debugbar/handle';
-                $renderer->setOpenHandlerUrl($openHandlerUrl);
-            }
+        if ($this->getStorage()) {
+            $openHandlerUrl = '/_debugbar/handle';
+            $renderer->setOpenHandlerUrl($openHandlerUrl);
+        }
 
-            try {
-                $renderedContent = $renderer->renderHead() . $renderer->render();
-            }catch (Exception $e){
-                $this->addCollectorException('清空文件缓存导致，请手动刷新', $e);
-                $renderedContent = $renderer->renderHead() . $renderer->render();
-            }
-            // trace调试信息注入
-            $pos = strripos($content, '</body>');
-            if (false !== $pos) {
-                $content = substr($content, 0, $pos) . $renderedContent . substr($content, $pos);
-            } else {
-                $content = $content . $renderedContent;
-            }
-            $response->content($content);
-       
-    }
+        try {
+            $renderedContent = $renderer->renderHead() . $renderer->render();
+        }catch (Exception $e){
+            $this->addCollectorException('清空文件缓存导致，请手动刷新', $e);
+            $renderedContent = $renderer->renderHead() . $renderer->render();
+        }
+        // trace调试信息注入
+        $pos = strripos($content, '</body>');
+        if (false !== $pos) {
+            $content = substr($content, 0, $pos) . $renderedContent . substr($content, $pos);
+        } else {
+            $content = $content . $renderedContent;
+        }
+        $response->content($content);
+
+}
 
     private function getRemoteServerReplacements()
     {
