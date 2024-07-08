@@ -14,7 +14,7 @@ return [
      |
      */
 
-    'enabled' => env('DEBUGBAR_ENABLED', null),
+    'enabled' => env('debugbar.DEBUGBAR_ENABLED', false),
     'except' => [
         'telescope*',
         'horizon*',
@@ -38,7 +38,7 @@ return [
      */
     'storage' => [
         'enabled'    => true,
-        'open'       => env('DEBUGBAR_OPEN_STORAGE', true), // bool/callback.
+        'open'       => env('debugbar.DEBUGBAR_OPEN_STORAGE', true), // bool/callback.
         'driver'     => 'file', // redis, file, pdo, socket, custom
         'path'       => storage_path('debugbar'), // For file driver
         'connection' => null,   // Leave null for default connection (Redis/PDO)
@@ -61,7 +61,7 @@ return [
     |
     */
 
-    'editor' => env('DEBUGBAR_EDITOR') ?: env('IGNITION_EDITOR', 'phpstorm'),
+    'editor' => env('debugbar.DEBUGBAR_EDITOR') ?: env('debugbar.IGNITION_EDITOR', 'phpstorm'),
 
     /*
     |--------------------------------------------------------------------------
@@ -86,8 +86,8 @@ return [
     |
     */
 
-    'remote_sites_path' => env('DEBUGBAR_REMOTE_SITES_PATH'),
-    'local_sites_path' => env('DEBUGBAR_LOCAL_SITES_PATH', env('IGNITION_LOCAL_SITES_PATH')),
+    'remote_sites_path' => env('debugbar.DEBUGBAR_REMOTE_SITES_PATH'),
+    'local_sites_path' => env('debugbar.DEBUGBAR_LOCAL_SITES_PATH', env('debugbar.IGNITION_LOCAL_SITES_PATH')),
 
     /*
      |--------------------------------------------------------------------------
@@ -136,7 +136,7 @@ return [
      | in the Messages tab.
      |
      */
-    'error_handler' => false,
+    'error_handler' => true,
 
 
     /*
@@ -300,7 +300,7 @@ return [
      | Switches between light and dark theme. If set to auto it will respect system preferences
      | Possible values: auto, light, dark
      */
-    'theme' => env('DEBUGBAR_THEME', 'auto'),
+    'theme' => env('debugbar.DEBUGBAR_THEME', 'auto'),
 
     /*
      |--------------------------------------------------------------------------

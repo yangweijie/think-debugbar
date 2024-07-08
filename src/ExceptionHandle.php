@@ -5,6 +5,7 @@ namespace think\debugbar;
 use Exception;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\ModelNotFoundException;
+use think\exception\ErrorException;
 use think\exception\Handle;
 use think\exception\HttpException;
 use think\exception\HttpResponseException;
@@ -61,7 +62,9 @@ class ExceptionHandle extends Handle
             try {
                 $this->app->log->record($log, 'error');
                 if($this->app->request->debugbar->shouldCollect('exceptions', true)){
-                    $this->app->request->debugbar['exceptions']->addException($exception);
+                    if($exception instanceof Exception){
+                        $this->app->request->debugbar['exceptions']->addException($exception);
+                    }
                 }
             } catch (Exception $e) {
 

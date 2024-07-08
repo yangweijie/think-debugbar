@@ -11,22 +11,26 @@ class Service extends \think\Service
 {
     public function register()
     {
-        $this->app->bind('think\exception\Handle', ExceptionHandle::class);
+        if($this->app->config->get('debugbar.enabled', false)){
+            $this->app->bind('think\exception\Handle', ExceptionHandle::class);
+        }
     }
 
     public function boot(Route $route)
     {
-
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
+        if($this->app->config->get('debugbar.enabled', false)){
+            if (session_status() == PHP_SESSION_NONE) {
+                session_start();
+            }
+            $app_cofig = $this->app->config->get('app');
+            $app_cofig['with_route'] = true;
+            $this->app->config->set($app_cofig, 'app');
+            $this->app->middleware->add(InjectDebugbar::class);
+            $route->get('_debugbar/assets/stylesheets', AssetController::class . "@css");
+            $route->get('_debugbar/assets/javascript', AssetController::class . "@js");
+            $route->get('_debugbar/handle', OpenHandlerController::class . "@handle");
         }
-        $app_cofig = $this->app->config->get('app');
-        $app_cofig['with_route'] = true;
-        $this->app->config->set($app_cofig, 'app');
-        $this->app->middleware->add(InjectDebugbar::class);
-        $route->get('_debugbar/assets/stylesheets', AssetController::class . "@css");
-        $route->get('_debugbar/assets/javascript', AssetController::class . "@js");
-        $route->get('_debugbar/handle', OpenHandlerController::class . "@handle");
+
 
 //        $router->delete('cache/{key}/{tags?}', [
 //            'uses' => 'CacheController@delete',

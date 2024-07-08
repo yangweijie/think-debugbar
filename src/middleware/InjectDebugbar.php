@@ -4,6 +4,7 @@ namespace think\debugbar\middleware;
 
 use think\debugbar\DebugBar;
 use think\helper\Str;
+use think\App;
 use think\Log;
 use think\Request;
 
@@ -13,8 +14,9 @@ class InjectDebugbar
     protected $log;
     protected $app;
 
-    public function __construct(DebugBar $debugbar, Log $log)
+    public function __construct(DebugBar $debugbar, Log $log, App $app)
     {
+        $this->app      = $app;
         $this->debugbar = $debugbar;
         $this->log      = $log;
     }
@@ -24,7 +26,6 @@ class InjectDebugbar
         if (Str::startsWith($request->pathinfo(), "_debugbar/")) {
             return $next($request);
         }
-
         $this->debugbar->init();
 
         $request->debugbar = $this->debugbar;
