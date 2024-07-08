@@ -4,9 +4,21 @@
 
 ## 安装
 
+### composer
 ~~~
-composer require yangweijie/think-debugbar
+composer require yangweijie/think-debugbar --dev
 ~~~
+
+### .env 修改
+
+~~~ 
+[debugbar]
+DEBUGBAR_ENABLED=true
+~~~
+
+其他配置参考 config/debugbar里的环境变量使用
+
+### nginx
 
 nginx 项目的rewrite里要配ThinkPHP的
 
