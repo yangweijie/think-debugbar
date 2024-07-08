@@ -15,7 +15,7 @@ use think\debugbar\storage\FilesystemStorage;
 use think\debugbar\storage\SocketStorage;
 use think\debugbar\storage\FileStorage;
 use think\db\Query;
-use DebugBar\DataCollector\ExceptionsCollector;
+use think\debugbar\collector\ExceptionsCollector;
 use think\debugbar\collector\FilesCollector;
 use think\debugbar\collector\MessagesCollector;
 use think\debugbar\collector\RequestDataCollector;
